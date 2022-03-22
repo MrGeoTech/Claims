@@ -5,7 +5,6 @@ import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 public class Claim {
 
@@ -13,8 +12,8 @@ public class Claim {
     private final List<Player> members;
     private final List<Flags> flags;
     private boolean isCompleted;
-    private int x1, x2, y1, y2;
-    private World world;
+    private Integer x1, x2, y1, y2 = null;
+    private World world = null;
 
     public Claim(Player owner) {
         this.owner = owner;
@@ -41,6 +40,10 @@ public class Claim {
 
     public void complete() {
         this.isCompleted = true;
+    }
+
+    public boolean canComplete() {
+        return x1 != null && y1 != null && x2 != null && y2 != null;
     }
 
     public int getX1() {
