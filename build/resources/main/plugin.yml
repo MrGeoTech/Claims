@@ -2,3 +2,4 @@ name: Claims
 main: com.github.mrgeotech.Claims
 version: 1.0
 author: MrGeoTech
+api-version: 1.18

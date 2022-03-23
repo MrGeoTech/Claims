@@ -6,7 +6,7 @@ public record Shape(ParticleHandler.Type type, Runnable runnable, int x, int y, 
 
     public void run() {
         taskID.integer = Bukkit.getScheduler()
-                .runTaskTimerAsynchronously(Claims.getInstance(), runnable, 0, 20).getTaskId();
+                .runTaskTimerAsynchronously(Claims.getInstance(), runnable, 0, 2).getTaskId();
     }
 
     public void stop() {
