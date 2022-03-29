@@ -19,3 +19,4 @@ go-back-to-menu-item-name: go-back-to-menu-item-name
 go-back-to-menu-item-lore: go-back-to-menu-item-lore
 add-member-item-name: add-member-item-name
 add-member-item-lore: add-member-item-lore
+member-head-lore: [ member-head-lore , Left-click to remove member ]

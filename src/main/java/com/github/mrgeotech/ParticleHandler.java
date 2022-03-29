@@ -101,10 +101,18 @@ public class ParticleHandler {
         double x = Math.min(claim.getX1(), claim.getX2()) + Math.max(claim.getX1(), claim.getX2()) / 2d;
         double y = Math.min(claim.getY1(), claim.getY2()) - Math.max(claim.getY1(), claim.getY2()) / 2d;
 
-        shapes.stream().filter(shape -> shape.x() == x && shape.y() == y).forEach(shape -> {
-            shape.stop();
-            shapes.remove(shape);
-        });
+        shapes.remove(null);
+        Shape temp = null;
+
+        for (Shape shape : shapes) {
+            if (shape != null && shape.type() == Type.CLAIM_BOX && shape.x() == x && shape.y() == y) {
+                temp = shape;
+            }
+        }
+
+        assert temp != null;
+        temp.stop();
+        shapes.remove(temp);
     }
 
     enum Type {

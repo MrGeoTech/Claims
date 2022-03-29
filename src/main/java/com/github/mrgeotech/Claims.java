@@ -16,6 +16,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class Claims extends JavaPlugin implements Listener {
 
@@ -26,7 +27,7 @@ public class Claims extends JavaPlugin implements Listener {
     }
 
     public static String color(String s) {
-        return ChatColor.translateAlternateColorCodes('&', s);
+        return ChatColor.translateAlternateColorCodes('&', s == null ? "" : s);
     }
 
     public static String getColoredString(String path) {
@@ -92,7 +93,7 @@ public class Claims extends JavaPlugin implements Listener {
         player.openInventory(inventory);
     }
 
-    public static void openMembersInventory(Claim claim) {
+    public static void openMembersInventory(Claim claim, Player p) {
         Inventory inventory = Bukkit.createInventory(null, 27, Claims.getColoredString("members-inventory-title"));
         ItemStack item = new ItemStack(Material.CHEST);
         ItemMeta meta = item.getItemMeta();
@@ -122,9 +123,29 @@ public class Claims extends JavaPlugin implements Listener {
             SkullMeta skullMeta = (SkullMeta) item.getItemMeta();
             assert skullMeta != null;
             skullMeta.setOwningPlayer(player);
+            skullMeta.setDisplayName(player.getName());
+            skullMeta.setLore(Claims.getColoredList("member-head-lore"));
             item.setItemMeta(skullMeta);
             inventory.addItem(item);
         }
+
+        p.openInventory(inventory);
+    }
+
+    public static void openAddMemberInventory(Claim claim, Player player) {
+        Inventory inventory = Bukkit.createInventory(null, 54, Claims.getColoredString("add-member-inventory-title"));
+        ItemStack item = new ItemStack(Material.PLAYER_HEAD);
+        for (Player online : Bukkit.getOnlinePlayers()) {
+            SkullMeta skullMeta = (SkullMeta) item.getItemMeta();
+            assert skullMeta != null;
+            skullMeta.setOwningPlayer(online);
+            skullMeta.setDisplayName(online.getName());
+            skullMeta.setLore(Claims.getColoredList("online-player-head-lore"));
+            item.setItemMeta(skullMeta);
+            inventory.addItem(item);
+        }
+
+        player.openInventory(inventory);
     }
 
     public static void openFlagsInventory(Claim claim) {
@@ -147,32 +168,58 @@ public class Claims extends JavaPlugin implements Listener {
 
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
-        if (!event.getWhoClicked().getOpenInventory().getTitle().equals(Claims.getColoredString("claim-inventory-title"))) return;
+        if (event.getWhoClicked().getOpenInventory().getTitle().equals(Claims.getColoredString("claim-inventory-title"))) {
+            event.setCancelled(true);
+            Claim claim  = claims.get(0);
+            double distance = claim.distance(event.getWhoClicked().getLocation());
+            for (Claim claim1 : claims) {
+                double distance1 = claim1.distance(event.getWhoClicked().getLocation());
+                if (distance1 < distance) {
+                    claim = claim1;
+                    distance = distance1;
+                }
+            }
 
-        event.setCancelled(true);
-        Claim claim  = claims.get(0);
-        double distance = claim.distance(event.getWhoClicked().getLocation());
-        for (Claim claim1 : claims) {
-            double distance1 = claim1.distance(event.getWhoClicked().getLocation());
-            if (distance1 < distance) {
-                claim = claim1;
-                distance = distance1;
-            }
-        }
+            switch (event.getSlot()) {
+                case 1 -> {
+                    if (claim.isShown())
+                        claim.hide();
+                    else
+                        claim.show(1200);
+                }
+                case 3 -> Claims.openMembersInventory(claim, (Player) event.getWhoClicked());
+                case 5 -> {
+                }
+                case 8 -> {
 
-        switch (event.getSlot()) {
-            case 1 -> {
-                if (claim.isShown())
-                    claim.hide();
-                else
-                    claim.show(1200);
+                }
             }
-            case 3 -> Claims.openMembersInventory(claim);
-            case 5 -> {
+        } else if (event.getWhoClicked().getOpenInventory().getTitle().equals(Claims.getColoredString("members-inventory-title"))) {
+            event.setCancelled(true);
+            Claim claim = claims.get(0);
+            double distance = claim.distance(event.getWhoClicked().getLocation());
+            for (Claim claim1 : claims) {
+                double distance1 = claim1.distance(event.getWhoClicked().getLocation());
+                if (distance1 < distance) {
+                    claim = claim1;
+                    distance = distance1;
+                }
             }
-            case 8 -> {
 
+            switch (event.getSlot()) {
+                case 18 -> openClaimInventory(claim, (Player) event.getWhoClicked());
+                case 20 -> openAddMemberInventory(claim, (Player) event.getWhoClicked());
+                case 19,21,22,23,24,25,26 -> {}
+                default -> {
+                    if (event.getCurrentItem() != null) {
+                        ItemStack item = event.getCurrentItem();
+                        if (event.isLeftClick())
+                            claim.getMembers().remove(((SkullMeta) Objects.requireNonNull(item.getItemMeta())).getOwningPlayer());
+                    }
+                }
             }
+        } else if (event.getWhoClicked().getOpenInventory().getTitle().equals(Claims.getColoredString("add-member-inventory-title"))) {
+            if (event.getCurrentItem() != null || !(event.getCurrentItem().getItemMeta() instanceof SkullMeta)) return;
         }
     }
 
