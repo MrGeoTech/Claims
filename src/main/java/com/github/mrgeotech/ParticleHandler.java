@@ -89,8 +89,8 @@ public class ParticleHandler {
         };
 
         Shape shape = new Shape(Type.CLAIM_BOX, runnable,
-                Math.min(claim.getX1(), claim.getX2()) + Math.max(claim.getX1(), claim.getX2()) / 2d,
-                Math.min(claim.getY1(), claim.getY2()) - Math.max(claim.getY1(), claim.getY2()) / 2d,
+                claim.getX1() + claim.getX2() / 2d,
+                claim.getY1() + claim.getY1() / 2d,
                 new IntegerContainer(0));
 
         shapes.add(shape);
@@ -98,16 +98,15 @@ public class ParticleHandler {
     }
 
     public static void hideClaim(Claim claim) {
-        double x = Math.min(claim.getX1(), claim.getX2()) + Math.max(claim.getX1(), claim.getX2()) / 2d;
-        double y = Math.min(claim.getY1(), claim.getY2()) - Math.max(claim.getY1(), claim.getY2()) / 2d;
+        double x = claim.getX1() + claim.getX2() / 2d;
+        double y = claim.getY1() + claim.getY1() / 2d;
 
         shapes.remove(null);
-        Shape temp = null;
+        Shape temp = shapes.get(0);
 
         for (Shape shape : shapes) {
-            if (shape != null && shape.type() == Type.CLAIM_BOX && shape.x() == x && shape.y() == y) {
+            if (shape.type() == Type.CLAIM_BOX && Math.ceil(shape.x()) == Math.ceil(x) && Math.ceil(shape.y()) == Math.ceil(y))
                 temp = shape;
-            }
         }
 
         assert temp != null;

@@ -52,24 +52,6 @@ public class ClaimBuilder implements Listener {
     @EventHandler
     public void onInteract(PlayerInteractEvent event) {
         if (isWaiting(event.getPlayer())) return;
-        if (event.getAction().equals(Action.RIGHT_CLICK_BLOCK)) {
-            assert event.getItem() != null;
-            assert event.getClickedBlock() != null;
-
-            if (event.hasItem() && event.getItem().getType().equals(Material.END_PORTAL_FRAME)) {
-                ClaimBuilder.startClaimProcess(event.getPlayer(), event.getClickedBlock().getRelative(event.getBlockFace()));
-                addWait(event.getPlayer());
-                return;
-            } else if (event.getClickedBlock().getType().equals(Material.END_PORTAL_FRAME)) {
-                Claims.getInstance().claims.forEach(claim -> {
-                    if (claim.isClaimBlock(event.getClickedBlock()) && claim.getOwner() == event.getPlayer()) {
-                        Claims.openClaimInventory(claim, event.getPlayer());
-                    }
-                });
-                addWait(event.getPlayer());
-                return;
-            }
-        }
         for (Claim claim : Claims.getInstance().claims) {
             if (claim.getOwner() == event.getPlayer() && !claim.isCompleted()) {
                 event.setCancelled(true);
@@ -93,6 +75,23 @@ public class ClaimBuilder implements Listener {
                 }
                 addWait(event.getPlayer());
                 return;
+            }
+            return;
+        }
+        if (event.getAction().equals(Action.RIGHT_CLICK_BLOCK)) {
+            assert event.getClickedBlock() != null;
+
+            if (event.getClickedBlock().getType().equals(Material.END_PORTAL_FRAME)) {
+                Claims.getInstance().claims.forEach(claim -> {
+                    if (claim.isClaimBlock(event.getClickedBlock()) && claim.getOwner() == event.getPlayer()) {
+                        Claims.openClaimInventory(claim, event.getPlayer());
+                    }
+                });
+                addWait(event.getPlayer());
+                event.setCancelled(true);
+            } else if (event.hasItem() && event.hasBlock() && Objects.requireNonNull(event.getItem()).getType().equals(Material.END_PORTAL_FRAME)) {
+                ClaimBuilder.startClaimProcess(event.getPlayer(), Objects.requireNonNull(event.getClickedBlock()).getRelative(event.getBlockFace()));
+                addWait(event.getPlayer());
             }
         }
     }

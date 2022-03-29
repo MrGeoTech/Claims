@@ -15,7 +15,7 @@ public class Claim {
 
     private final OfflinePlayer owner;
     private final List<OfflinePlayer> members;
-    private final List<Flags> flags;
+    private final List<Flag> flags;
     private final int x, y, z;
     private boolean isCompleted;
     private boolean isShown;
@@ -42,7 +42,7 @@ public class Claim {
         return members;
     }
 
-    public List<Flags> getFlags() {
+    public List<Flag> getFlags() {
         return flags;
     }
 
@@ -160,8 +160,28 @@ public class Claim {
         return isShown;
     }
 
-    enum Flags {
+    public Claim delete() {
+        if (isShown)
+            hide();
+        return this;
+    }
 
+    enum Flag {
+        OPEN_CHEST,
+        INTERACT_REDSTONE,
+        USE_PEARL,
+        USE_CHORUS,
+        PLACE_BLOCKS,
+        BREAK_BLOCKS,
+        USE_ANVILS,
+        PICK_UP_ITEMS,
+        CREEPER_EXPLOSIONS,
+        ENDERMAN_GRIEF,
+        SNOW_FORMATION,
+        SNOW_MELT,
+        ICE_FORMATION,
+        ICE_MELT,
+        MYCELIUM_SPREAD
     }
 
 }
