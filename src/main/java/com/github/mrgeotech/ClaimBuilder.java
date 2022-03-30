@@ -1,6 +1,7 @@
 package com.github.mrgeotech;
 
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -18,19 +19,20 @@ import java.util.Objects;
 public class ClaimBuilder implements Listener {
 
     public static void giveClaimItem(Player player) {
-        ItemStack item = new ItemStack(Material.END_PORTAL, 1);
+        ItemStack item = new ItemStack(Material.END_PORTAL);
         ItemMeta meta = item.getItemMeta();
         assert meta != null;
         meta.setDisplayName(Claims.getColoredString("claim-object-name"));
-        List<String> lore = Claims.getInstance().getConfig().getStringList("claim-object-lore");
-        for (int i = 0; i < lore.size(); i++) {
-            lore.set(i, Claims.color(lore.get(i)));
-        }
-        meta.setLore(lore);
+        meta.setLore(Claims.getColoredList("claim-object-lore"));
         item.setItemMeta(meta);
-        player.getInventory().addItem(item).forEach(
-                (integer, itemStack) -> player.getWorld().dropItemNaturally(player.getLocation(), item)
-        );
+        for (int i = 0; i < 36; i++) {
+            if (player.getInventory().getItem(i) == null) {
+                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "eco take " + player.getName() + " 100");
+                player.getInventory().setItem(i, item);
+                return;
+            }
+        }
+        player.sendMessage(ChatColor.RED + "You must have an empty slot for the claim item!");
     }
 
     public static void startClaimProcess(Player player, Block block) {
@@ -52,46 +54,54 @@ public class ClaimBuilder implements Listener {
     @EventHandler
     public void onInteract(PlayerInteractEvent event) {
         if (isWaiting(event.getPlayer())) return;
+
+        if (event.getClickedBlock() == null) return;
+
         for (Claim claim : Claims.getInstance().claims) {
-            if (claim.getOwner() == event.getPlayer() && !claim.isCompleted()) {
-                event.setCancelled(true);
-                if (Objects.requireNonNull(event.getClickedBlock()).getType().equals(Material.END_PORTAL_FRAME)) {
-                    if (claim.canComplete()) {
-                        claim.complete();
-                        event.getPlayer().sendMessage(Claims.getColoredString("claim-completed-message"));
-                    } else {
-                        event.getPlayer().sendMessage(Claims.getColoredString("claim-cannot-complete-message"));
+            if (claim.getOwner() == event.getPlayer()) {
+                if (claim.isCompleted()) {
+                    if (event.getClickedBlock().getType().equals(Material.END_PORTAL_FRAME) &&
+                            claim.isClaimBlock(event.getClickedBlock())) {
+                        Claims.openClaimInventory(claim, event.getPlayer());
+                        addWait(event.getPlayer());
+                        event.setCancelled(true);
                     }
                 } else {
-                    if (event.getAction().equals(Action.LEFT_CLICK_BLOCK)) {
-                        event.getPlayer().sendMessage(Claims.getColoredString("claim-left-click-corner-message"));
-                        if (claim.getWorld() == null) claim.setWorld(event.getPlayer().getWorld());
-                        claim.setCorner1(event.getClickedBlock().getX(), event.getClickedBlock().getZ());
-                    } else if (event.getAction().equals(Action.RIGHT_CLICK_BLOCK)) {
-                        event.getPlayer().sendMessage(Claims.getColoredString("claim-right-click-corner-message"));
-                        if (claim.getWorld() == null) claim.setWorld(event.getPlayer().getWorld());
-                        claim.setCorner2(event.getClickedBlock().getX(), event.getClickedBlock().getZ());
+                    event.setCancelled(true);
+                    if (Objects.requireNonNull(event.getClickedBlock()).getType().equals(Material.END_PORTAL_FRAME)) {
+                        if (claim.canComplete()) {
+                            claim.complete();
+                            event.getPlayer().sendMessage(Claims.getColoredString("claim-completed-message"));
+                        } else {
+                            event.getPlayer().sendMessage(Claims.getColoredString("claim-cannot-complete-message"));
+                        }
+                    } else {
+                        if (event.getAction().equals(Action.LEFT_CLICK_BLOCK)) {
+                            event.getPlayer().sendMessage(Claims.getColoredString("claim-left-click-corner-message"));
+                            if (claim.getWorld() == null) claim.setWorld(event.getPlayer().getWorld());
+                            claim.setCorner1(event.getClickedBlock().getX(), event.getClickedBlock().getZ());
+                        } else if (event.getAction().equals(Action.RIGHT_CLICK_BLOCK)) {
+                            event.getPlayer().sendMessage(Claims.getColoredString("claim-right-click-corner-message"));
+                            if (claim.getWorld() == null) claim.setWorld(event.getPlayer().getWorld());
+                            claim.setCorner2(event.getClickedBlock().getX(), event.getClickedBlock().getZ());
+                        }
                     }
+                    addWait(event.getPlayer());
                 }
-                addWait(event.getPlayer());
                 return;
             }
-            return;
         }
+
         if (event.getAction().equals(Action.RIGHT_CLICK_BLOCK)) {
             assert event.getClickedBlock() != null;
 
-            if (event.getClickedBlock().getType().equals(Material.END_PORTAL_FRAME)) {
-                Claims.getInstance().claims.forEach(claim -> {
-                    if (claim.isClaimBlock(event.getClickedBlock()) && claim.getOwner() == event.getPlayer()) {
-                        Claims.openClaimInventory(claim, event.getPlayer());
-                    }
-                });
-                addWait(event.getPlayer());
-                event.setCancelled(true);
-            } else if (event.hasItem() && event.hasBlock() && Objects.requireNonNull(event.getItem()).getType().equals(Material.END_PORTAL_FRAME)) {
-                ClaimBuilder.startClaimProcess(event.getPlayer(), Objects.requireNonNull(event.getClickedBlock()).getRelative(event.getBlockFace()));
-                addWait(event.getPlayer());
+            if (event.hasItem() && event.hasBlock() && Objects.requireNonNull(event.getItem()).getType().equals(Material.END_PORTAL_FRAME)) {
+                if (Claims.getInstance().claims.stream()
+                        .filter(claim -> claim.getOwner().getUniqueId() == event.getPlayer().getUniqueId())
+                        .toList().size() == 0) {
+                    ClaimBuilder.startClaimProcess(event.getPlayer(), Objects.requireNonNull(event.getClickedBlock()).getRelative(event.getBlockFace()));
+                    addWait(event.getPlayer());
+                }
             }
         }
     }

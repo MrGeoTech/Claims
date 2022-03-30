@@ -4,10 +4,19 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.entity.EnderPearl;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.*;
+import org.bukkit.event.entity.*;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
@@ -15,10 +24,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public class Claims extends JavaPlugin implements Listener {
 
@@ -137,11 +143,11 @@ public class Claims extends JavaPlugin implements Listener {
         inventory.setItem(25, item);
         inventory.setItem(26, item);
         item = new ItemStack(Material.PLAYER_HEAD);
-        for (OfflinePlayer player : claim.getMembers()) {
+        for (UUID player : claim.getMembers()) {
             SkullMeta skullMeta = (SkullMeta) item.getItemMeta();
             assert skullMeta != null;
-            skullMeta.setOwningPlayer(player);
-            skullMeta.setDisplayName(player.getName());
+            skullMeta.setOwningPlayer(Bukkit.getOfflinePlayer(player));
+            skullMeta.setDisplayName(Bukkit.getOfflinePlayer(player).getName());
             skullMeta.setLore(Claims.getColoredList("member-head-lore"));
             item.setItemMeta(skullMeta);
             inventory.addItem(item);
@@ -150,7 +156,7 @@ public class Claims extends JavaPlugin implements Listener {
         p.openInventory(inventory);
     }
 
-    public static void openAddMemberInventory(Claim claim, Player player) {
+    public static void openAddMemberInventory(Player player) {
         Inventory inventory = Bukkit.createInventory(null, 54, Claims.getColoredString("add-member-inventory-title"));
         ItemStack item = new ItemStack(Material.PLAYER_HEAD);
         for (Player online : Bukkit.getOnlinePlayers()) {
@@ -194,42 +200,42 @@ public class Claims extends JavaPlugin implements Listener {
         meta = item.getItemMeta();
         assert meta != null;
         meta.setDisplayName(Claims.getColoredString("open-chest-flag-name"));
-        meta.setLore(Claims.getFlagLore(claim, "open-chest-flag-lore %OPEN_CHEST%", Claim.Flag.OPEN_CHEST));
+        meta.setLore(Claims.getFlagLore(claim, "open-chest-flag-lore", Claim.Flag.OPEN_CHEST));
         item.setItemMeta(meta);
         inventory.setItem(0, item);
         item = new ItemStack(Material.OAK_DOOR);
         meta = item.getItemMeta();
         assert meta != null;
         meta.setDisplayName(Claims.getColoredString("interact-redstone-flag-name"));
-        meta.setLore(Claims.getFlagLore(claim, "interact-redstone-flag-lore %INTERACT_REDSTONE%", Claim.Flag.INTERACT_REDSTONE));
+        meta.setLore(Claims.getFlagLore(claim, "interact-redstone-flag-lore", Claim.Flag.INTERACT_REDSTONE));
         item.setItemMeta(meta);
         inventory.setItem(1, item);
         item = new ItemStack(Material.ENDER_PEARL);
         meta = item.getItemMeta();
         assert meta != null;
         meta.setDisplayName(Claims.getColoredString("use-pearl-flag-name"));
-        meta.setLore(Claims.getFlagLore(claim, "use-pearl-flag-lore %USE_PEARL%", Claim.Flag.USE_PEARL));
+        meta.setLore(Claims.getFlagLore(claim, "use-pearl-flag-lore", Claim.Flag.USE_PEARL));
         item.setItemMeta(meta);
         inventory.setItem(2, item);
         item = new ItemStack(Material.CHORUS_FRUIT);
         meta = item.getItemMeta();
         assert meta != null;
         meta.setDisplayName(Claims.getColoredString("use-chorus-flag-name"));
-        meta.setLore(Claims.getFlagLore(claim, "use-chorus-flag-lore %USE_CHORUS%", Claim.Flag.USE_CHORUS));
+        meta.setLore(Claims.getFlagLore(claim, "use-chorus-flag-lore", Claim.Flag.USE_CHORUS));
         item.setItemMeta(meta);
         inventory.setItem(3, item);
         item = new ItemStack(Material.GRASS_BLOCK);
         meta = item.getItemMeta();
         assert meta != null;
         meta.setDisplayName(Claims.getColoredString("place-blocks-flag-name"));
-        meta.setLore(Claims.getFlagLore(claim, "place-blocks-flag-lore %PLACE_BLOCKS%", Claim.Flag.PLACE_BLOCKS));
+        meta.setLore(Claims.getFlagLore(claim, "place-blocks-flag-lore", Claim.Flag.PLACE_BLOCKS));
         item.setItemMeta(meta);
         inventory.setItem(4, item);
         item = new ItemStack(Material.STONE_PICKAXE);
         meta = item.getItemMeta();
         assert meta != null;
         meta.setDisplayName(Claims.getColoredString("break-blocks-flag-name"));
-        meta.setLore(Claims.getFlagLore(claim, "break-blocks-flag-lore %BREAK_BLOCKS%", Claim.Flag.BREAK_BLOCKS));
+        meta.setLore(Claims.getFlagLore(claim, "break-blocks-flag-lore", Claim.Flag.BREAK_BLOCKS));
         meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_DESTROYS);
         item.setItemMeta(meta);
         inventory.setItem(5, item);
@@ -237,63 +243,63 @@ public class Claims extends JavaPlugin implements Listener {
         meta = item.getItemMeta();
         assert meta != null;
         meta.setDisplayName(Claims.getColoredString("use-anvils-flag-name"));
-        meta.setLore(Claims.getFlagLore(claim, "use-anvils-flag-lore %USE_ANVILS%", Claim.Flag.USE_ANVILS));
+        meta.setLore(Claims.getFlagLore(claim, "use-anvils-flag-lore", Claim.Flag.USE_ANVILS));
         item.setItemMeta(meta);
         inventory.setItem(6, item);
         item = new ItemStack(Material.HOPPER);
         meta = item.getItemMeta();
         assert meta != null;
         meta.setDisplayName(Claims.getColoredString("pick-up-items-flag-name"));
-        meta.setLore(Claims.getFlagLore(claim, "pick-up-items-flag-lore %PICK_UP_ITEMS%", Claim.Flag.PICK_UP_ITEMS));
+        meta.setLore(Claims.getFlagLore(claim, "pick-up-items-flag-lore", Claim.Flag.PICK_UP_ITEMS));
         item.setItemMeta(meta);
         inventory.setItem(7, item);
         item = new ItemStack(Material.TNT);
         meta = item.getItemMeta();
         assert meta != null;
         meta.setDisplayName(Claims.getColoredString("creeper-explosions-flag-name"));
-        meta.setLore(Claims.getFlagLore(claim, "creeper-explosions-flag-lore %CREEPER_EXPLOSIONS%", Claim.Flag.CREEPER_EXPLOSIONS));
+        meta.setLore(Claims.getFlagLore(claim, "creeper-explosions-flag-lore", Claim.Flag.CREEPER_EXPLOSIONS));
         item.setItemMeta(meta);
         inventory.setItem(8, item);
         item = new ItemStack(Material.ENDERMAN_SPAWN_EGG);
         meta = item.getItemMeta();
         assert meta != null;
         meta.setDisplayName(Claims.getColoredString("enderman-grief-flag-name"));
-        meta.setLore(Claims.getFlagLore(claim, "enderman-grief-flag-lore %ENDERMAN_GRIEF%", Claim.Flag.ENDERMAN_GRIEF));
+        meta.setLore(Claims.getFlagLore(claim, "enderman-grief-flag-lore", Claim.Flag.ENDERMAN_GRIEF));
         item.setItemMeta(meta);
         inventory.setItem(9, item);
         item = new ItemStack(Material.SNOW_BLOCK);
         meta = item.getItemMeta();
         assert meta != null;
         meta.setDisplayName(Claims.getColoredString("snow-formation-flag-name"));
-        meta.setLore(Claims.getFlagLore(claim, "snow-formation-flag-lore %SNOW_FORMATION%", Claim.Flag.SNOW_FORMATION));
+        meta.setLore(Claims.getFlagLore(claim, "snow-formation-flag-lore", Claim.Flag.SNOW_FORMATION));
         item.setItemMeta(meta);
         inventory.setItem(10, item);
         item = new ItemStack(Material.WATER_BUCKET);
         meta = item.getItemMeta();
         assert meta != null;
         meta.setDisplayName(Claims.getColoredString("snow-melt-flag-name"));
-        meta.setLore(Claims.getFlagLore(claim, "snow-melt-flag-lore %SNOW_MELT%", Claim.Flag.SNOW_MELT));
+        meta.setLore(Claims.getFlagLore(claim, "snow-melt-flag-lore", Claim.Flag.SNOW_MELT));
         item.setItemMeta(meta);
         inventory.setItem(11, item);
         item = new ItemStack(Material.ICE);
         meta = item.getItemMeta();
         assert meta != null;
         meta.setDisplayName(Claims.getColoredString("ice-formation-flag-name"));
-        meta.setLore(Claims.getFlagLore(claim, "ice-formation-flag-lore %ICE_FORMATION%", Claim.Flag.ICE_FORMATION));
+        meta.setLore(Claims.getFlagLore(claim, "ice-formation-flag-lore", Claim.Flag.ICE_FORMATION));
         item.setItemMeta(meta);
         inventory.setItem(12, item);
         item = new ItemStack(Material.WATER_BUCKET);
         meta = item.getItemMeta();
         assert meta != null;
         meta.setDisplayName(Claims.getColoredString("ice-melting-flag-name"));
-        meta.setLore(Claims.getFlagLore(claim, "ice-melting-flag-lore %ICE_MELTING%", Claim.Flag.ICE_MELT));
+        meta.setLore(Claims.getFlagLore(claim, "ice-melting-flag-lore", Claim.Flag.ICE_MELT));
         item.setItemMeta(meta);
         inventory.setItem(13, item);
-        item = new ItemStack(Material.WATER_BUCKET);
+        item = new ItemStack(Material.MYCELIUM);
         meta = item.getItemMeta();
         assert meta != null;
         meta.setDisplayName(Claims.getColoredString("mycelium-spread-flag-name"));
-        meta.setLore(Claims.getFlagLore(claim, "mycelium-spread-flag-lore %MYCELIUM_SPREAD%", Claim.Flag.MYCELIUM_SPREAD));
+        meta.setLore(Claims.getFlagLore(claim, "mycelium-spread-flag-lore", Claim.Flag.MYCELIUM_SPREAD));
         item.setItemMeta(meta);
         inventory.setItem(14, item);
 
@@ -303,14 +309,33 @@ public class Claims extends JavaPlugin implements Listener {
     @Override
     public void onEnable() {
         saveDefaultConfig();
+        loadClaims();
         Bukkit.getPluginManager().registerEvents(this, Bukkit.getPluginManager().getPlugin("Claims"));
         Bukkit.getPluginManager().registerEvents(new ClaimBuilder(), Bukkit.getPluginManager().getPlugin("Claims"));
+        Bukkit.getPluginCommand("claim").setExecutor(new ClaimCommand());
+        Bukkit.getPluginCommand("flyclaim").setExecutor(new ClaimFlyCommand());
     }
 
     @Override
     public void onDisable() {
         ParticleHandler.removeAllShapes();
+        Bukkit.getScheduler().cancelTasks(this);
+        Bukkit.getOnlinePlayers().forEach(player -> player.setFlying(false));
+        saveClaims();
         saveConfig();
+    }
+
+    private void loadClaims() {
+        if (!getConfig().contains("claims")) return;
+        for (String path : Objects.requireNonNull(getConfig().getConfigurationSection("claims")).getKeys(false)) {
+            claims.add(new Claim(Objects.requireNonNull(getConfig().getConfigurationSection("claims." + path))));
+        }
+    }
+
+    private void saveClaims() {
+        ConfigurationSection section = getConfig().createSection("claims");
+        claims.forEach(claim -> claim.save(section.createSection(UUID.randomUUID().toString())));
+        getConfig().set("claims", section);
     }
 
     @EventHandler
@@ -336,7 +361,10 @@ public class Claims extends JavaPlugin implements Listener {
                 }
                 case 3 -> Claims.openMembersInventory(claim, (Player) event.getWhoClicked());
                 case 5 -> Claims.openFlagsInventory(claim, (Player) event.getWhoClicked());
-                case 8 -> claims.remove(claim.delete());
+                case 8 -> {
+                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "eco give " + claim.getOwner().getName() + " 100");
+                    claims.remove(claim.delete());
+                }
             }
         } else if (event.getWhoClicked().getOpenInventory().getTitle().equals(Claims.getColoredString("members-inventory-title"))) {
             event.setCancelled(true);
@@ -352,7 +380,7 @@ public class Claims extends JavaPlugin implements Listener {
 
             switch (event.getSlot()) {
                 case 18 -> openClaimInventory(claim, (Player) event.getWhoClicked());
-                case 20 -> openAddMemberInventory(claim, (Player) event.getWhoClicked());
+                case 20 -> openAddMemberInventory((Player) event.getWhoClicked());
                 case 19,21,22,23,24,25,26 -> {}
                 default -> {
                     if (event.getCurrentItem() != null) {
@@ -378,9 +406,9 @@ public class Claims extends JavaPlugin implements Listener {
             OfflinePlayer player = ((SkullMeta) event.getCurrentItem().getItemMeta()).getOwningPlayer();
             assert player != null;
             System.out.println(player.getName());
-            if (claim.getOwner() == player || claim.getMembers().contains(player)) return;
+            if (claim.getOwner() == player || claim.getMembers().contains(player.getUniqueId())) return;
             System.out.println(player.getName());
-            claim.getMembers().add(player);
+            claim.getMembers().add(player.getUniqueId());
         } else if (event.getWhoClicked().getOpenInventory().getTitle().equals(Claims.getColoredString("claim-flag-inventory-title"))) {
             event.setCancelled(true);
             Claim claim = claims.get(0);
@@ -461,6 +489,212 @@ public class Claims extends JavaPlugin implements Listener {
             }
             openFlagsInventory(claim, (Player) event.getWhoClicked());
         }
+    }
+
+    @EventHandler
+    public void onChestOpen(PlayerInteractEvent event) {
+        if (event.hasItem()) {
+            if (event.getItem().getType().equals(Material.CHORUS_FRUIT)) {
+                List<Claim> temp = claims.stream().filter(claim -> claim.contains(event.getClickedBlock().getLocation())).toList();
+                if (temp.size() < 1) return;
+                Claim claim = temp.get(0);
+                if (!claim.getFlags().contains(Claim.Flag.USE_CHORUS) && claim.isNotMember(event.getPlayer())) {
+                    event.setCancelled(true);
+                    return;
+                }
+            }
+        }
+        if (event.hasBlock()) {
+            Material material = event.getClickedBlock().getType();
+            List<Claim> temp = claims.stream().filter(claim -> claim.contains(event.getClickedBlock().getLocation())).toList();
+            if (temp.size() < 1) return;
+            Claim claim = temp.get(0);
+            if (!claim.getFlags().contains(Claim.Flag.OPEN_CHEST) && claim.isNotMember(event.getPlayer()) && (
+                    material.equals(Material.CHEST) ||
+                    material.equals(Material.TRAPPED_CHEST) ||
+                    material.equals(Material.CHEST_MINECART) ||
+                    material.equals(Material.HOPPER) ||
+                    material.equals(Material.HOPPER_MINECART) ||
+                    material.equals(Material.FURNACE) ||
+                    material.equals(Material.BLAST_FURNACE) ||
+                    material.equals(Material.CRAFTING_TABLE) ||
+                    material.equals(Material.SMOKER) ||
+                    material.equals(Material.SMITHING_TABLE) ||
+                    material.equals(Material.CARTOGRAPHY_TABLE) ||
+                    material.equals(Material.ENCHANTING_TABLE) ||
+                    material.equals(Material.FLETCHING_TABLE) ||
+                    material.equals(Material.LECTERN))) {
+                    event.setCancelled(true);
+            } else if (!claim.getFlags().contains(Claim.Flag.INTERACT_REDSTONE) && claim.isNotMember(event.getPlayer()) && (
+                    material.equals(Material.BIRCH_BUTTON) ||
+                    material.equals(Material.ACACIA_BUTTON) ||
+                    material.equals(Material.CRIMSON_BUTTON) ||
+                    material.equals(Material.DARK_OAK_BUTTON) ||
+                    material.equals(Material.JUNGLE_BUTTON) ||
+                    material.equals(Material.OAK_BUTTON) ||
+                    material.equals(Material.POLISHED_BLACKSTONE_BUTTON) ||
+                    material.equals(Material.SPRUCE_BUTTON) ||
+                    material.equals(Material.STONE_BUTTON) ||
+                    material.equals(Material.WARPED_BUTTON) ||
+                    material.equals(Material.POLISHED_BLACKSTONE_PRESSURE_PLATE) ||
+                    material.equals(Material.ACACIA_PRESSURE_PLATE) ||
+                    material.equals(Material.BIRCH_PRESSURE_PLATE) ||
+                    material.equals(Material.CRIMSON_PRESSURE_PLATE) ||
+                    material.equals(Material.DARK_OAK_PRESSURE_PLATE) ||
+                    material.equals(Material.LIGHT_WEIGHTED_PRESSURE_PLATE) ||
+                    material.equals(Material.HEAVY_WEIGHTED_PRESSURE_PLATE) ||
+                    material.equals(Material.JUNGLE_PRESSURE_PLATE) ||
+                    material.equals(Material.OAK_PRESSURE_PLATE) ||
+                    material.equals(Material.SPRUCE_PRESSURE_PLATE) ||
+                    material.equals(Material.STONE_PRESSURE_PLATE) ||
+                    material.equals(Material.WARPED_PRESSURE_PLATE) ||
+                    material.equals(Material.LEVER) ||
+                    material.equals(Material.DAYLIGHT_DETECTOR) ||
+                    material.equals(Material.JUKEBOX) ||
+                    material.equals(Material.TARGET) ||
+                    material.equals(Material.REPEATER) ||
+                    material.equals(Material.COMPARATOR) ||
+                    material.equals(Material.BELL) ||
+                    material.equals(Material.DISPENSER) ||
+                    material.equals(Material.DROPPER) ||
+                    material.equals(Material.DARK_OAK_DOOR) ||
+                    material.equals(Material.OAK_DOOR) ||
+                    material.equals(Material.ACACIA_DOOR) ||
+                    material.equals(Material.BIRCH_DOOR) ||
+                    material.equals(Material.CRIMSON_DOOR) ||
+                    material.equals(Material.IRON_DOOR) ||
+                    material.equals(Material.JUNGLE_DOOR) ||
+                    material.equals(Material.SPRUCE_DOOR) ||
+                    material.equals(Material.WARPED_DOOR) ||
+                    material.equals(Material.TRIPWIRE_HOOK) ||
+                    material.equals(Material.ACACIA_FENCE_GATE) ||
+                    material.equals(Material.BIRCH_FENCE_GATE) ||
+                    material.equals(Material.CRIMSON_FENCE_GATE) ||
+                    material.equals(Material.DARK_OAK_FENCE_GATE) ||
+                    material.equals(Material.JUNGLE_FENCE_GATE) ||
+                    material.equals(Material.OAK_FENCE_GATE) ||
+                    material.equals(Material.SPRUCE_FENCE_GATE) ||
+                    material.equals(Material.WARPED_FENCE_GATE) ||
+                    material.equals(Material.NOTE_BLOCK) ||
+                    material.equals(Material.TNT) ||
+                    material.equals(Material.TNT_MINECART) ||
+                    material.equals(Material.COMMAND_BLOCK) ||
+                    material.equals(Material.CHAIN_COMMAND_BLOCK) ||
+                    material.equals(Material.REPEATING_COMMAND_BLOCK) ||
+                    material.equals(Material.COMMAND_BLOCK_MINECART))) {
+                    event.setCancelled(true);
+            } else if (!claim.getFlags().contains(Claim.Flag.USE_ANVILS) && claim.isNotMember(event.getPlayer()) && (
+                    material.equals(Material.ANVIL))) {
+                event.setCancelled(true);
+            }
+        }
+    }
+
+    @EventHandler
+    public void throwEvent(ProjectileLaunchEvent event) {
+        List<Claim> temp = claims.stream().filter(claim -> claim.contains(event.getEntity().getLocation())).toList();
+        if (temp.size() < 1) return;
+        Claim claim = temp.get(0);
+
+        if (claim.getFlags().contains(Claim.Flag.USE_PEARL)) return;
+
+        Collection<Entity> nearbyEntities = Objects.requireNonNull(event.getLocation().getWorld()).getNearbyEntities(event.getLocation(), 1, 1, 1);
+        nearbyEntities.removeIf(entity -> !(entity instanceof Player));
+        if (nearbyEntities.size() == 0) return;
+
+        Player player = (Player) nearbyEntities.stream().toList().get(0);
+        if (claim.isNotMember(player) && event.getEntity() instanceof EnderPearl) event.setCancelled(true);
+    }
+
+    @EventHandler
+    public void breakEvent(BlockBreakEvent event) {
+        claims.forEach(claim -> {
+            if (claim.isClaimBlock(event.getBlock())) event.setCancelled(true);
+        });
+        List<Claim> temp = claims.stream().filter(claim -> claim.contains(event.getBlock().getLocation())).toList();
+        if (temp.size() < 1) return;
+        Claim claim = temp.get(0);
+        if (!claim.getFlags().contains(Claim.Flag.BREAK_BLOCKS) &&
+                claim.isNotMember(event.getPlayer()))
+            event.setCancelled(true);
+    }
+
+    @EventHandler
+    public void breakEvent(BlockPlaceEvent event) {
+        List<Claim> temp = claims.stream().filter(claim -> claim.contains(event.getBlock().getLocation())).toList();
+        if (temp.size() < 1) return;
+        Claim claim = temp.get(0);
+        if (!claim.getFlags().contains(Claim.Flag.PLACE_BLOCKS) &&
+                claim.isNotMember(event.getPlayer()))
+            event.setCancelled(true);
+    }
+
+    @EventHandler
+    public void pickupItemEvent(EntityPickupItemEvent event) {
+        List<Claim> temp = claims.stream().filter(claim -> claim.contains(event.getEntity().getLocation())).toList();
+        if (temp.size() < 1) return;
+        Claim claim = temp.get(0);
+        if (!(event.getEntity() instanceof Player player)) return;
+        if (!claim.getFlags().contains(Claim.Flag.PLACE_BLOCKS) &&
+                claim.isNotMember(player))
+            event.setCancelled(true);
+    }
+
+    @EventHandler
+    public void creeperExplodeEvent(ExplosionPrimeEvent event) {
+        List<Claim> temp = claims.stream().filter(claim -> claim.contains(event.getEntity().getLocation())).toList();
+        System.out.println(temp);
+        if (temp.size() < 1) return;
+        Claim claim = temp.get(0);
+        if (!claim.getFlags().contains(Claim.Flag.CREEPER_EXPLOSIONS))
+            event.setCancelled(true);
+    }
+
+    @EventHandler
+    public void endermanPickupEvent(EntityChangeBlockEvent event) {
+        List<Claim> temp = claims.stream().filter(claim -> claim.contains(event.getEntity().getLocation())).toList();
+        if (temp.size() < 1) return;
+        Claim claim = temp.get(0);
+        if (!claim.getFlags().contains(Claim.Flag.ENDERMAN_GRIEF))
+            event.setCancelled(true);
+    }
+
+    @EventHandler
+    public void formEvent(BlockFormEvent event) {
+        List<Claim> temp = claims.stream().filter(claim -> claim.contains(event.getBlock().getLocation())).toList();
+        if (temp.size() < 1) return;
+        Claim claim = temp.get(0);
+        if (event.getNewState().getType().equals(Material.SNOW)) {
+            if (!claim.getFlags().contains(Claim.Flag.SNOW_FORMATION))
+                event.setCancelled(true);
+        } else if (event.getNewState().getType().equals(Material.ICE)) {
+            if (!claim.getFlags().contains(Claim.Flag.ICE_FORMATION))
+                event.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void meltEvent(BlockFadeEvent event) {
+        List<Claim> temp = claims.stream().filter(claim -> claim.contains(event.getBlock().getLocation())).toList();
+        if (temp.size() < 1) return;
+        Claim claim = temp.get(0);
+        if (event.getBlock().getType().equals(Material.SNOW)) {
+            if (!claim.getFlags().contains(Claim.Flag.SNOW_MELT))
+                event.setCancelled(true);
+        } else if (event.getBlock().getType().equals(Material.ICE)) {
+            if (!claim.getFlags().contains(Claim.Flag.ICE_MELT))
+                event.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void spreadEvent(BlockSpreadEvent event) {
+        List<Claim> temp = claims.stream().filter(claim -> claim.contains(event.getBlock().getLocation())).toList();
+        if (temp.size() < 1) return;
+        Claim claim = temp.get(0);
+        if (event.getBlock().getType().equals(Material.MYCELIUM))
+            if (!claim.getFlags().contains(Claim.Flag.MYCELIUM_SPREAD))
+                event.setCancelled(true);
     }
 
 }

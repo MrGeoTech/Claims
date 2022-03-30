@@ -1,20 +1,21 @@
 package com.github.mrgeotech;
 
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.OfflinePlayer;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.block.Block;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
+import org.checkerframework.checker.units.qual.A;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 
 public class Claim {
 
-    private final OfflinePlayer owner;
-    private final List<OfflinePlayer> members;
+    private final UUID owner;
+    private final List<UUID> members;
     private final List<Flag> flags;
     private final int x, y, z;
     private boolean isCompleted;
@@ -23,7 +24,7 @@ public class Claim {
     private World world = null;
 
     public Claim(Player owner, int x, int y, int z) {
-        this.owner = owner;
+        this.owner = owner.getUniqueId();
         this.members = new ArrayList<>();
         this.flags = new ArrayList<>();
         this.x = x;
@@ -33,12 +34,38 @@ public class Claim {
         this.isShown = false;
     }
 
-    @Nonnull
-    public OfflinePlayer getOwner() {
-        return owner;
+    public Claim(ConfigurationSection section) {
+        this.owner = UUID.fromString(Objects.requireNonNull(section.getString("owner")));
+        List<String> sMembers = section.getStringList("members");
+        this.members = new ArrayList<>();
+        for (String player : sMembers) {
+            members.add(UUID.fromString(player));
+        }
+        List<String> sFlags = section.getStringList("flags");
+        this.flags = new ArrayList<>();
+        for (String flag : sFlags) {
+            flags.add(Flag.valueOf(flag));
+        }
+        this.x = section.getInt("blockX");
+        this.y = section.getInt("blockY");
+        this.z = section.getInt("blockZ");
+        this.isCompleted = true;
+        this.isShown = section.getBoolean("isShown");
+        this.x1 = section.getInt("corner1X");
+        this.y1 = section.getInt("corner1Y");
+        this.x2 = section.getInt("corner2X");
+        this.y2 = section.getInt("corner2Y");
+        this.world = Bukkit.getWorld(Objects.requireNonNull(section.getString("world")));
+        assert this.world != null;
+        this.world.setType(x, y, z, Material.END_PORTAL_FRAME);
     }
 
-    public List<OfflinePlayer> getMembers() {
+    @Nonnull
+    public OfflinePlayer getOwner() {
+        return Bukkit.getOfflinePlayer(owner);
+    }
+
+    public List<UUID> getMembers() {
         return members;
     }
 
@@ -110,7 +137,7 @@ public class Claim {
             ParticleHandler.hideLine(x1, y1);
         this.x1 = x;
         this.y1 = y;
-        ParticleHandler.showLine(x, y, owner.getPlayer());
+        ParticleHandler.showLine(x, y, Bukkit.getOfflinePlayer(owner).getPlayer());
     }
 
     public void setCorner2(int x, int y) {
@@ -118,7 +145,7 @@ public class Claim {
             ParticleHandler.hideLine(x2, y2);
         this.x2 = x;
         this.y2 = y;
-        ParticleHandler.showLine(x, y, owner.getPlayer());
+        ParticleHandler.showLine(x, y, Bukkit.getOfflinePlayer(owner).getPlayer());
     }
 
     public void show() {
@@ -160,10 +187,46 @@ public class Claim {
         return isShown;
     }
 
+    public boolean contains(Location location) {
+        return isCompleted && location.getBlockX() > Math.min(x1, x2) && location.getBlockX() < Math.max(x1, x2) &&
+                location.getBlockZ() > Math.min(y1, y2) && location.getBlockZ() < Math.max(y1, y2);
+    }
+
+    public boolean isNotMember(OfflinePlayer player) {
+        return !members.contains(player.getUniqueId()) && owner != player.getUniqueId();
+    }
+
     public Claim delete() {
         if (isShown)
             hide();
+        world.setType(x, y, z, Material.AIR);
+        Objects.requireNonNull(Bukkit.getOfflinePlayer(owner).getPlayer()).closeInventory();
         return this;
+    }
+
+    public void save(ConfigurationSection section) {
+        if (!isCompleted) return;
+        section.set("owner", owner.toString());
+        List<String> sMembers = new ArrayList<>();
+        for (UUID player : members) {
+            sMembers.add(player.toString());
+        }
+        section.set("members", sMembers);
+        List<String> sFlags = new ArrayList<>();
+        for (Flag flag : flags) {
+            sFlags.add(flag.name());
+        }
+        section.set("flags", sFlags);
+        section.set("blockX", x);
+        section.set("blockY", y);
+        section.set("blockZ", z);
+        section.set("isShown", isShown);
+        section.set("corner1X", x1);
+        section.set("corner1Y", y1);
+        section.set("corner2X", x2);
+        section.set("corner2Y", y2);
+        section.set("world", world.getName());
+        this.delete();
     }
 
     enum Flag {
