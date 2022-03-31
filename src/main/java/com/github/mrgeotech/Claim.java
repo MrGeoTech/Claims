@@ -82,10 +82,25 @@ public class Claim {
         ParticleHandler.hideLine(x1, y1);
         ParticleHandler.hideLine(x2, y2);
         this.show(60);
+        Claims.getInstance().economy.withdrawPlayer(Bukkit.getOfflinePlayer(owner), getArea() * 50);
     }
 
-    public boolean canComplete() {
-        return x1 != null && y1 != null && x2 != null && y2 != null;
+    public boolean canComplete(Player player) {
+        if (x1 != null && y1 != null && x2 != null && y2 != null) {
+            if (this.containsNotComplete(new Location(world, x, y, z))) {
+                if (Claims.getInstance().economy.getBalance(Bukkit.getOfflinePlayer(owner)) >= getArea() * 50) {
+                    return true;
+                }
+                player.sendMessage(Claims.getColoredString("not-enough-money-error")
+                        .replaceAll("%HAVE%", String.valueOf(Claims.getInstance().economy.getBalance(player)))
+                        .replaceAll("%NEED%", String.valueOf(getArea() * 50)));
+                return false;
+            }
+            player.sendMessage(Claims.getColoredString("block-must-be-in-claim-error"));
+            return false;
+        }
+        player.sendMessage(Claims.getColoredString("claim-cannot-complete-message"));
+        return false;
     }
 
     public int getX1() {
@@ -164,7 +179,10 @@ public class Claim {
     }
 
     public int getArea() {
-        return (Math.max(x1, x2) - Math.min(x1, x2)) * (Math.max(y1, y2) - Math.min(y1, y2));
+        if (x1 != null && y1 != null && x2 != null && y2 != null)
+            return (Math.max(x1, x2) - Math.min(x1, x2)) * (Math.max(y1, y2) - Math.min(y1, y2));
+        else
+            return 0;
     }
 
     public int getVolume() {
@@ -190,6 +208,14 @@ public class Claim {
     public boolean contains(Location location) {
         return isCompleted && location.getBlockX() > Math.min(x1, x2) && location.getBlockX() < Math.max(x1, x2) &&
                 location.getBlockZ() > Math.min(y1, y2) && location.getBlockZ() < Math.max(y1, y2);
+    }
+
+    public boolean containsNotComplete(Location location) {
+        if (x1 != null && y1 != null && x2 != null && y2 != null)
+            return location.getBlockX() > Math.min(x1, x2) && location.getBlockX() < Math.max(x1, x2) &&
+                    location.getBlockZ() > Math.min(y1, y2) && location.getBlockZ() < Math.max(y1, y2);
+        else
+            return false;
     }
 
     public boolean isNotMember(OfflinePlayer player) {

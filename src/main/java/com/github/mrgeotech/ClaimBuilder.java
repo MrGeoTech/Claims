@@ -19,7 +19,7 @@ import java.util.Objects;
 public class ClaimBuilder implements Listener {
 
     public static void giveClaimItem(Player player) {
-        ItemStack item = new ItemStack(Material.END_PORTAL);
+        ItemStack item = new ItemStack(Material.END_PORTAL_FRAME);
         ItemMeta meta = item.getItemMeta();
         assert meta != null;
         meta.setDisplayName(Claims.getColoredString("claim-object-name"));
@@ -32,7 +32,7 @@ public class ClaimBuilder implements Listener {
                 return;
             }
         }
-        player.sendMessage(ChatColor.RED + "You must have an empty slot for the claim item!");
+        player.sendMessage(Claims.getColoredString("no-open-slot-error"));
     }
 
     public static void startClaimProcess(Player player, Block block) {
@@ -69,19 +69,19 @@ public class ClaimBuilder implements Listener {
                 } else {
                     event.setCancelled(true);
                     if (Objects.requireNonNull(event.getClickedBlock()).getType().equals(Material.END_PORTAL_FRAME)) {
-                        if (claim.canComplete()) {
+                        if (claim.canComplete(event.getPlayer())) {
                             claim.complete();
                             event.getPlayer().sendMessage(Claims.getColoredString("claim-completed-message"));
-                        } else {
-                            event.getPlayer().sendMessage(Claims.getColoredString("claim-cannot-complete-message"));
                         }
                     } else {
                         if (event.getAction().equals(Action.LEFT_CLICK_BLOCK)) {
-                            event.getPlayer().sendMessage(Claims.getColoredString("claim-left-click-corner-message"));
+                            event.getPlayer().sendMessage(Claims.getColoredString("claim-left-click-corner-message")
+                                    .replaceAll("%COST%", String.valueOf(claim.getArea() * 50)));
                             if (claim.getWorld() == null) claim.setWorld(event.getPlayer().getWorld());
                             claim.setCorner1(event.getClickedBlock().getX(), event.getClickedBlock().getZ());
                         } else if (event.getAction().equals(Action.RIGHT_CLICK_BLOCK)) {
-                            event.getPlayer().sendMessage(Claims.getColoredString("claim-right-click-corner-message"));
+                            event.getPlayer().sendMessage(Claims.getColoredString("claim-right-click-corner-message")
+                                    .replaceAll("%COST%", String.valueOf(claim.getArea() * 50)));
                             if (claim.getWorld() == null) claim.setWorld(event.getPlayer().getWorld());
                             claim.setCorner2(event.getClickedBlock().getX(), event.getClickedBlock().getZ());
                         }

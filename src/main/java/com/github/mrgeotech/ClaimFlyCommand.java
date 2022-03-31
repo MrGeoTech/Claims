@@ -16,43 +16,26 @@ public class ClaimFlyCommand implements CommandExecutor {
                 Player player = Bukkit.getPlayer(args[0]);
                 if (player != null) {
                     try {
+                        player.sendMessage(Claims.getColoredString("give-fly-player").replaceAll("%TIME%", args[1]));
                         player.setAllowFlight(true);
                         player.setFlying(true);
-                        Bukkit.getScheduler().scheduleSyncRepeatingTask(Claims.getInstance(), new Runnable() {
-                            private int count = 0;
-                            private boolean outside = false;
 
-                            @Override
-                            public void run() {
-                                System.out.println(count);
-                                count++;
-                                if (outside) {
-                                    if (Claims.getInstance().claims.stream().filter(claim -> claim.contains(player.getLocation())).toList().size() != 0)
-                                        outside = false;
-                                } else {
-                                    if (count == Long.parseLong(args[1]) * 20 * 60)
-                                        player.setFlying(false);
-                                    else if (Claims.getInstance().claims.stream().filter(claim -> claim.contains(player.getLocation())).toList().size() == 0) {
-                                        player.setFlying(false);
-                                        player.setInvisible(true);
-                                        outside = true;
-                                        Bukkit.getScheduler().scheduleSyncDelayedTask(Claims.getInstance(), () -> player.setInvisible(false), 200);
-                                    }
-                                }
-                            }
-                        }, 1, Integer.parseInt(args[1]) * 20 * 60L);
+                        FlyRunnable runnable = new FlyRunnable((Integer.parseInt(args[1]) * 20 * 60L) - 1, player);
+
+                        runnable.setId(Bukkit.getScheduler().scheduleSyncRepeatingTask(Claims.getInstance(), runnable, 1, 1));
+                        Bukkit.getScheduler().scheduleSyncDelayedTask(Claims.getInstance(), () -> player.setFlying(false), Integer.parseInt(args[1]) * 20 * 60L);
                     } catch (IllegalArgumentException e) {
                         e.printStackTrace();
-                        sender.sendMessage(ChatColor.RED + "Second argument must be a number!");
+                        sender.sendMessage(Claims.getColoredString("second-argument-error"));
                     }
                 } else {
-                    sender.sendMessage(ChatColor.RED + "Could not find player!");
+                    sender.sendMessage(Claims.getColoredString("could-not-find-player-error"));
                 }
             } else {
-                sender.sendMessage(ChatColor.RED + "Usage: /flyclaim <user> <minutes>");
+                sender.sendMessage(Claims.getColoredString("incorrect-fly-claim-usage"));
             }
         } else {
-            sender.sendMessage(ChatColor.RED + "Sorry but you do not have permission to execute this command!");
+            sender.sendMessage(Claims.getColoredString("player-no-permission"));
         }
         return true;
     }

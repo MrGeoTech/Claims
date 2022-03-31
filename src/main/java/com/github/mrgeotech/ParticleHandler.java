@@ -98,20 +98,22 @@ public class ParticleHandler {
     }
 
     public static void hideClaim(Claim claim) {
-        double x = claim.getX1() + claim.getX2() / 2d;
-        double y = claim.getY1() + claim.getY1() / 2d;
+        try {
+            double x = claim.getX1() + claim.getX2() / 2d;
+            double y = claim.getY1() + claim.getY1() / 2d;
 
-        shapes.remove(null);
-        Shape temp = shapes.get(0);
+            shapes.remove(null);
+            Shape temp = shapes.get(0);
 
-        for (Shape shape : shapes) {
-            if (shape.type() == Type.CLAIM_BOX && Math.ceil(shape.x()) == Math.ceil(x) && Math.ceil(shape.y()) == Math.ceil(y))
-                temp = shape;
-        }
+            for (Shape shape : shapes) {
+                if (shape.type() == Type.CLAIM_BOX && Math.ceil(shape.x()) == Math.ceil(x) && Math.ceil(shape.y()) == Math.ceil(y))
+                    temp = shape;
+            }
 
-        assert temp != null;
-        temp.stop();
-        shapes.remove(temp);
+            assert temp != null;
+            temp.stop();
+            shapes.remove(temp);
+        } catch (Exception ignore) {}
     }
 
     enum Type {

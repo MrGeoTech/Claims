@@ -1,12 +1,10 @@
 package com.github.mrgeotech;
 
+import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
-import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.EnderPearl;
 import org.bukkit.entity.Entity;
@@ -14,7 +12,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.*;
-import org.bukkit.event.entity.*;
+import org.bukkit.event.entity.EntityChangeBlockEvent;
+import org.bukkit.event.entity.EntityPickupItemEvent;
+import org.bukkit.event.entity.ExplosionPrimeEvent;
+import org.bukkit.event.entity.ProjectileLaunchEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.Inventory;
@@ -22,6 +23,7 @@ import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
+import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.*;
@@ -29,6 +31,7 @@ import java.util.*;
 public class Claims extends JavaPlugin implements Listener {
 
     public List<Claim> claims = new ArrayList<>();
+    public Economy economy;
 
     public static Claims getInstance() {
         return (Claims) Bukkit.getPluginManager().getPlugin("Claims");
@@ -314,6 +317,9 @@ public class Claims extends JavaPlugin implements Listener {
         Bukkit.getPluginManager().registerEvents(new ClaimBuilder(), Bukkit.getPluginManager().getPlugin("Claims"));
         Bukkit.getPluginCommand("claim").setExecutor(new ClaimCommand());
         Bukkit.getPluginCommand("flyclaim").setExecutor(new ClaimFlyCommand());
+        RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class);
+        assert rsp != null;
+        economy = rsp.getProvider();
     }
 
     @Override
@@ -386,7 +392,7 @@ public class Claims extends JavaPlugin implements Listener {
                     if (event.getCurrentItem() != null) {
                         ItemStack item = event.getCurrentItem();
                         if (event.isLeftClick())
-                            claim.getMembers().remove(((SkullMeta) Objects.requireNonNull(item.getItemMeta())).getOwningPlayer());
+                            claim.getMembers().remove(Objects.requireNonNull(((SkullMeta) Objects.requireNonNull(item.getItemMeta())).getOwningPlayer()).getUniqueId());
                     }
                 }
             }
@@ -494,8 +500,8 @@ public class Claims extends JavaPlugin implements Listener {
     @EventHandler
     public void onChestOpen(PlayerInteractEvent event) {
         if (event.hasItem()) {
-            if (event.getItem().getType().equals(Material.CHORUS_FRUIT)) {
-                List<Claim> temp = claims.stream().filter(claim -> claim.contains(event.getClickedBlock().getLocation())).toList();
+            if (Objects.requireNonNull(event.getItem()).getType().equals(Material.CHORUS_FRUIT)) {
+                List<Claim> temp = claims.stream().filter(claim -> claim.contains(Objects.requireNonNull(event.getClickedBlock()).getLocation())).toList();
                 if (temp.size() < 1) return;
                 Claim claim = temp.get(0);
                 if (!claim.getFlags().contains(Claim.Flag.USE_CHORUS) && claim.isNotMember(event.getPlayer())) {
@@ -505,7 +511,7 @@ public class Claims extends JavaPlugin implements Listener {
             }
         }
         if (event.hasBlock()) {
-            Material material = event.getClickedBlock().getType();
+            Material material = Objects.requireNonNull(event.getClickedBlock()).getType();
             List<Claim> temp = claims.stream().filter(claim -> claim.contains(event.getClickedBlock().getLocation())).toList();
             if (temp.size() < 1) return;
             Claim claim = temp.get(0);
