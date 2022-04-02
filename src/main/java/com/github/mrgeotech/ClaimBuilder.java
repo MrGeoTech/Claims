@@ -25,6 +25,10 @@ public class ClaimBuilder implements Listener {
         meta.setDisplayName(Claims.getColoredString("claim-object-name"));
         meta.setLore(Claims.getColoredList("claim-object-lore"));
         item.setItemMeta(meta);
+        if (player.getInventory().contains(item)) {
+            player.sendMessage(Claims.getColoredString("can-only-build-one-claim-at-a-time-error"));
+            return;
+        }
         for (int i = 0; i < 36; i++) {
             if (player.getInventory().getItem(i) == null) {
                 Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "eco take " + player.getName() + " 100");
@@ -65,6 +69,8 @@ public class ClaimBuilder implements Listener {
                         Claims.openClaimInventory(claim, event.getPlayer());
                         addWait(event.getPlayer());
                         event.setCancelled(true);
+                    } else {
+                        continue;
                     }
                 } else {
                     event.setCancelled(true);
@@ -76,12 +82,12 @@ public class ClaimBuilder implements Listener {
                     } else {
                         if (event.getAction().equals(Action.LEFT_CLICK_BLOCK)) {
                             event.getPlayer().sendMessage(Claims.getColoredString("claim-left-click-corner-message")
-                                    .replaceAll("%COST%", String.valueOf(claim.getArea() * 50)));
+                                    .replaceAll("%COST%", String.valueOf(claim.getArea() * Claims.getInstance().getConfig().getInt("price-per-block"))));
                             if (claim.getWorld() == null) claim.setWorld(event.getPlayer().getWorld());
                             claim.setCorner1(event.getClickedBlock().getX(), event.getClickedBlock().getZ());
                         } else if (event.getAction().equals(Action.RIGHT_CLICK_BLOCK)) {
                             event.getPlayer().sendMessage(Claims.getColoredString("claim-right-click-corner-message")
-                                    .replaceAll("%COST%", String.valueOf(claim.getArea() * 50)));
+                                    .replaceAll("%COST%", String.valueOf(claim.getArea() * Claims.getInstance().getConfig().getInt("price-per-block"))));
                             if (claim.getWorld() == null) claim.setWorld(event.getPlayer().getWorld());
                             claim.setCorner2(event.getClickedBlock().getX(), event.getClickedBlock().getZ());
                         }
@@ -97,7 +103,8 @@ public class ClaimBuilder implements Listener {
 
             if (event.hasItem() && event.hasBlock() && Objects.requireNonNull(event.getItem()).getType().equals(Material.END_PORTAL_FRAME)) {
                 if (Claims.getInstance().claims.stream()
-                        .filter(claim -> claim.getOwner().getUniqueId() == event.getPlayer().getUniqueId())
+                        .filter(claim -> (claim.getOwner().getUniqueId() == event.getPlayer().getUniqueId() && !claim.isCompleted()) ||
+                                claim.contains(event.getClickedBlock().getLocation()))
                         .toList().size() == 0) {
                     ClaimBuilder.startClaimProcess(event.getPlayer(), Objects.requireNonNull(event.getClickedBlock()).getRelative(event.getBlockFace()));
                     addWait(event.getPlayer());

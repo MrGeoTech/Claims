@@ -10,3 +10,5 @@ commands:
     usage: "Usage: /flyclaim <user> minutes>"
   claim:
     usage: "Usage: /claim"
+  claimsreload:
+    usage: "Usage: /claimsreload"

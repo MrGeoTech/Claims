@@ -82,21 +82,25 @@ public class Claim {
         ParticleHandler.hideLine(x1, y1);
         ParticleHandler.hideLine(x2, y2);
         this.show(60);
-        Claims.getInstance().economy.withdrawPlayer(Bukkit.getOfflinePlayer(owner), getArea() * 50);
+        Claims.getInstance().economy.withdrawPlayer(Bukkit.getOfflinePlayer(owner), getArea() * Claims.getInstance().getConfig().getInt("price-per-block"));
     }
 
     public boolean canComplete(Player player) {
         if (x1 != null && y1 != null && x2 != null && y2 != null) {
-            if (this.containsNotComplete(new Location(world, x, y, z))) {
-                if (Claims.getInstance().economy.getBalance(Bukkit.getOfflinePlayer(owner)) >= getArea() * 50) {
-                    return true;
+            if (intersectsOtherClaims()) {
+                if (this.containsNotComplete(new Location(world, x, y, z))) {
+                    if (Claims.getInstance().economy.getBalance(Bukkit.getOfflinePlayer(owner)) >= getArea() * Claims.getInstance().getConfig().getInt("price-per-block")) {
+                        return true;
+                    }
+                    player.sendMessage(Claims.getColoredString("not-enough-money-error")
+                            .replaceAll("%HAVE%", String.valueOf(Claims.getInstance().economy.getBalance(player)))
+                            .replaceAll("%NEED%", String.valueOf(getArea() * Claims.getInstance().getConfig().getInt("price-per-block"))));
+                    return false;
                 }
-                player.sendMessage(Claims.getColoredString("not-enough-money-error")
-                        .replaceAll("%HAVE%", String.valueOf(Claims.getInstance().economy.getBalance(player)))
-                        .replaceAll("%NEED%", String.valueOf(getArea() * 50)));
+                player.sendMessage(Claims.getColoredString("block-must-be-in-claim-error"));
                 return false;
             }
-            player.sendMessage(Claims.getColoredString("block-must-be-in-claim-error"));
+            player.sendMessage(Claims.getColoredString("cannot-overlap-other-claim"));
             return false;
         }
         player.sendMessage(Claims.getColoredString("claim-cannot-complete-message"));
@@ -216,6 +220,18 @@ public class Claim {
                     location.getBlockZ() > Math.min(y1, y2) && location.getBlockZ() < Math.max(y1, y2);
         else
             return false;
+    }
+
+    public boolean intersectsOtherClaims() {
+        for (int i = Math.min(x1, x2); i < Math.max(x1, x2); i++) {
+            for (int j = Math.min(y1, y2); j < Math.max(y1, y2); j++) {
+                for (Claim claim : Claims.getInstance().claims) {
+                    if (claim.contains(new Location(world, i, 0, j)))
+                        return false;
+                }
+            }
+        }
+        return true;
     }
 
     public boolean isNotMember(OfflinePlayer player) {

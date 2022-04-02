@@ -5,7 +5,7 @@ claim-right-click-corner-message: Test4
 claim-completed-message: Test5
 claim-inventory-title: claim-inventory-title
 claim-information-item-name: claim-information-item-name
-claim-information-item-lore: claim-information-item-lore
+claim-information-item-lore: [claim-information-item-lore, "%OWNER%%VOLUME%%AREA%%COORD1%%COORD2%"]
 claim-view-item-name: claim-view-item-name
 claim-view-item-lore: claim-view-item-lore
 claim-members-item-name: claim-members-item-name
@@ -22,3 +22,4 @@ add-member-item-lore: add-member-item-lore
 member-head-lore: [ member-head-lore , Left-click to remove member ]
 boss-bar-text: "&bYou have %TIME_LEFT% left of flight!"
 not-enough-money-error: "&cYou don't have enough money! You need %NEED% and you have %HAVE%"
+price-per-block: 50

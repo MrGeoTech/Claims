@@ -12,10 +12,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.*;
-import org.bukkit.event.entity.EntityChangeBlockEvent;
-import org.bukkit.event.entity.EntityPickupItemEvent;
-import org.bukkit.event.entity.ExplosionPrimeEvent;
-import org.bukkit.event.entity.ProjectileLaunchEvent;
+import org.bukkit.event.entity.*;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.Inventory;
@@ -30,7 +27,7 @@ import java.util.*;
 
 public class Claims extends JavaPlugin implements Listener {
 
-    public List<Claim> claims = new ArrayList<>();
+    public final List<Claim> claims = new ArrayList<>();
     public Economy economy;
 
     public static Claims getInstance() {
@@ -53,11 +50,11 @@ public class Claims extends JavaPlugin implements Listener {
 
     public static List<String> getInfoList(Claim claim, String path) {
         return getColoredList(path).stream()
-                .map(s -> s.replaceAll("%owner%", Objects.requireNonNull(claim.getOwner().getName()))
-                        .replaceAll("%area%", claim.getArea() + "")
-                        .replaceAll("%volume%", claim.getVolume() + "")
-                        .replaceAll("%coord1%", claim.getCorner1())
-                        .replaceAll("%coord2%", claim.getCorner2())).toList();
+                .map(s -> s.replaceAll("%OWNER%", Objects.requireNonNull(claim.getOwner().getName()))
+                        .replaceAll("%AREA%", claim.getArea() + "")
+                        .replaceAll("%VOLUME%", claim.getVolume() + "")
+                        .replaceAll("%COORD1%", claim.getCorner1())
+                        .replaceAll("%COORD2%", claim.getCorner2())).toList();
     }
 
     public static List<String> getFlagLore(Claim claim, String path, Claim.Flag flag) {
@@ -317,6 +314,7 @@ public class Claims extends JavaPlugin implements Listener {
         Bukkit.getPluginManager().registerEvents(new ClaimBuilder(), Bukkit.getPluginManager().getPlugin("Claims"));
         Bukkit.getPluginCommand("claim").setExecutor(new ClaimCommand());
         Bukkit.getPluginCommand("flyclaim").setExecutor(new ClaimFlyCommand());
+        Bukkit.getPluginCommand("claimsreload").setExecutor(new ReloadCommand());
         RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class);
         assert rsp != null;
         economy = rsp.getProvider();
@@ -340,7 +338,10 @@ public class Claims extends JavaPlugin implements Listener {
 
     private void saveClaims() {
         ConfigurationSection section = getConfig().createSection("claims");
-        claims.forEach(claim -> claim.save(section.createSection(UUID.randomUUID().toString())));
+        claims.forEach(claim -> {
+            if (claim.isCompleted())
+                claim.save(section.createSection(UUID.randomUUID().toString()));
+        });
         getConfig().set("claims", section);
     }
 

@@ -14,7 +14,7 @@ import java.util.TimeZone;
 public class FlyRunnable implements Runnable {
     private long count = 0;
     private int id;
-    private final long intCount;
+    private long intCount;
     private final Player player;
     private final BossBar bossBar;
 
@@ -35,14 +35,13 @@ public class FlyRunnable implements Runnable {
         count++;
         if (intCount > count) {
             if (Claims.getInstance().claims.stream().filter(claim -> claim.contains(player.getLocation())).toList().size() == 0) {
-                player.setAllowFlight(false);
                 if (player.isFlying()) {
                     player.setFlying(false);
                     player.setInvulnerable(true);
-                    Bukkit.getScheduler().scheduleSyncDelayedTask(Claims.getInstance(), () -> {
-                        player.setInvulnerable(false);
-                    }, 200);
+                    System.out.println(player.isInvulnerable());
+                    Bukkit.getScheduler().scheduleSyncDelayedTask(Claims.getInstance(), () -> player.setInvulnerable(false), 200);
                 }
+                player.setAllowFlight(false);
             } else {
                 player.setInvulnerable(false);
                 player.setAllowFlight(true);
@@ -60,11 +59,19 @@ public class FlyRunnable implements Runnable {
             player.setFlying(false);
             player.setAllowFlight(false);
             player.setInvulnerable(true);
+            Bukkit.getScheduler().scheduleSyncDelayedTask(Claims.getInstance(), () -> {
+                player.setInvulnerable(false);
+            }, 200);
+            bossBar.removeAll();
             Bukkit.getScheduler().scheduleSyncDelayedTask(Claims.getInstance(), () -> player.setInvulnerable(false), 200);
         }
     }
 
     public void setId(int id) {
         this.id = id;
+    }
+
+    public void addTime(long time) {
+        intCount += time * 20 * 60;
     }
 }
