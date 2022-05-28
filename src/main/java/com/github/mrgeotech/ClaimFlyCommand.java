@@ -38,6 +38,8 @@ public class ClaimFlyCommand implements CommandExecutor {
                             FlyRunnable runnable = new FlyRunnable((Integer.parseInt(args[1]) * 20 * 60L), player);
 
                             runnable.setId(Bukkit.getScheduler().scheduleSyncRepeatingTask(Claims.getInstance(), runnable, 1, 1));
+
+                            players.put(player, runnable);
                         } catch (IllegalArgumentException e) {
                             e.printStackTrace();
                             sender.sendMessage(Claims.getColoredString("second-argument-error"));
